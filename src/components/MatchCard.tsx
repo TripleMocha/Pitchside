@@ -42,8 +42,8 @@ export function MatchCard({ s }: { s: Stream }) {
     <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
       <Link href={`/watch/${s.stream_key}`} className="group block">
         <Thumb s={s} />
-        <h3 className="mt-2.5 truncate text-sm font-semibold">{s.name}</h3>
-        <p className="truncate text-xs text-mute">{cap(s.category)} | {s.league || "—"} | {fmtTime(s.match_timestamp)}</p>
+        <h3 className="mt-3 truncate text-lg font-bold">{s.name}</h3>
+        <p className="truncate text-sm text-mute">{cap(s.category)} | {s.league || "—"} | {fmtTime(s.match_timestamp)}</p>
       </Link>
     </motion.div>
   );
@@ -56,8 +56,8 @@ export function MatchRow({ s }: { s: Stream }) {
         className="flex items-center gap-4 rounded-lg bg-panel px-4 py-3 transition-colors hover:bg-tile">
         <SportIcon category={s.category} className="h-5 w-5 shrink-0 text-mute" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{s.name}</p>
-          <p className="truncate text-xs text-mute">{cap(s.category)} | {s.league || "—"}</p>
+          <p className="truncate text-base font-bold">{s.name}</p>
+          <p className="truncate text-sm text-mute">{cap(s.category)} | {s.league || "—"}</p>
         </div>
         {isLive(s) ? (
           <span className="rounded bg-live px-2 py-0.5 text-[11px] font-bold">LIVE</span>

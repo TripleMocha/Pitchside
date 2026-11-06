@@ -41,7 +41,7 @@ export default function Player({ streamKey }: { streamKey: string }) {
         <Link href="/" className="absolute left-0 flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm text-mute transition-colors hover:text-white">
           <ArrowLeft className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Back to matches</span>
         </Link>
-        <h1 className="max-w-[60%] truncate text-sm font-bold">{stream?.name ?? "Loading…"}</h1>
+        <h1 className="max-w-[60%] truncate text-xl font-bold">{stream?.name ?? "Loading…"}</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">

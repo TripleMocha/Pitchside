@@ -17,13 +17,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={sans.variable}>
       <body className="flex min-h-screen flex-col">
         <header className="border-b border-line">
-          <div className="mx-auto flex h-16 max-w-[1500px] items-center px-5 sm:px-8">
+          <div className="mx-auto flex h-16 max-w-[1880px] items-center px-5 sm:px-10">
             <Link href="/" className="text-2xl font-bold tracking-tight">
               Pitch<span className="text-live">side</span>
             </Link>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1500px] flex-1 px-5 py-8 sm:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1880px] flex-1 px-5 py-8 sm:px-10">{children}</main>
         <footer className="border-t border-line py-6 text-center text-xs text-mute">
           Pitchside hosts no media. It only links to streams provided by third parties.
         </footer>

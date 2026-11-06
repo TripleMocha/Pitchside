@@ -58,7 +58,7 @@ export default function Browser() {
 
   const tab = (id: string, label: string) => (
     <button key={id} onClick={() => setCategory(id)} aria-pressed={category === id}
-      className={`flex h-24 w-28 shrink-0 flex-col items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition-colors ${
+      className={`flex h-28 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition-colors ${
         category === id ? "border-live/70 bg-live/10 text-white" : "border-line bg-panel text-mute hover:bg-tile hover:text-white"}`}>
       <SportIcon category={id} className={`h-6 w-6 ${category === id ? "text-live" : ""}`} />
       {label}
@@ -81,7 +81,7 @@ export default function Browser() {
       </div>
 
       {streams === null && !error && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-video animate-pulse rounded-lg bg-panel" />)}
         </div>
       )}
@@ -90,8 +90,8 @@ export default function Browser() {
 
       {live.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-bold">Live now</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+          <h2 className="mb-4 text-2xl font-bold">Live now</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6">
             {live.map((s) => <MatchCard key={s.stream_key} s={s} />)}
           </div>
         </section>
@@ -100,7 +100,7 @@ export default function Browser() {
       {groups.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between border-b border-line pb-3">
-            <h2 className="text-lg font-bold">Matches</h2>
+            <h2 className="text-2xl font-bold">Matches</h2>
             <div className="flex gap-1.5">
               {([["grid", LayoutGrid], ["list", List]] as const).map(([v, Icon]) => (
                 <button key={v} onClick={() => setView(v)} aria-label={`${v} view`} aria-pressed={view === v}
@@ -113,12 +113,12 @@ export default function Browser() {
           <div className="space-y-8">
             {groups.map((g) => (
               <div key={g.label + g.day} className="flex flex-col gap-4 md:flex-row">
-                <div className="w-20 shrink-0 md:pt-1">
-                  <p className="text-xs font-bold text-live">{g.label}</p>
-                  <p className="text-3xl font-bold leading-tight">{g.day}</p>
+                <div className="w-24 shrink-0 md:pt-1">
+                  <p className="text-sm font-bold text-live">{g.label}</p>
+                  <p className="text-4xl font-bold leading-tight">{g.day}</p>
                 </div>
                 <div className={view === "grid"
-                  ? "grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                  ? "grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6"
                   : "flex flex-1 flex-col gap-2"}>
                   {g.items.map((s) => view === "grid" ? <MatchCard key={s.stream_key} s={s} /> : <MatchRow key={s.stream_key} s={s} />)}
                 </div>
