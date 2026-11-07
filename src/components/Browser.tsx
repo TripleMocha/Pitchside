@@ -2,17 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid, List, Search } from "lucide-react";
 import SportIcon from "./SportIcon";
-import Hero from "./Hero";
+import HeroCarousel from "./Hero";
 import { MatchCard, MatchRow, cap } from "./MatchCard";
+import { dayDiff, dayLabel, effectiveTs, isStale } from "@/lib/time";
 import { isLive, type Stream } from "@/lib/types";
-
-const dayLabel = (ts: number) => {
-  const d = new Date(ts * 1000), t = new Date();
-  const tomorrow = new Date(t.getTime() + 864e5);
-  if (d.toDateString() === t.toDateString()) return "Today";
-  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-  return d.toLocaleDateString([], { weekday: "short" });
-};
 
 const CardSkeleton = () => (
   <div>
@@ -59,45 +52,61 @@ export default function Browser() {
     );
   }, [streams, category, query]);
 
-  const live = filtered.filter(isLive);
-  const featured = live.find((s) => s.thumbnail_url) ?? live[0];
+  const live = useMemo(() => {
+    const now = Date.now();
+    // real matches first, then 24/7 channels
+    return filtered.filter(isLive).sort((a, b) => Number(isStale(a, now)) - Number(isStale(b, now)) || a.match_timestamp - b.match_timestamp);
+  }, [filtered]);
+  const featured = useMemo(() => {
+    const withArt = live.filter((s) => s.thumbnail_url);
+    return (withArt.length ? withArt : live).slice(0, 6);
+  }, [live]);
+
+  // Today first, then tomorrow, then later dates; live streams with stale dates count as today.
   const groups = useMemo(() => {
-    const m = new Map<string, { label: string; day: number; items: Stream[] }>();
+    const now = Date.now();
+    const m = new Map<number, { diff: number; ts: number; items: Stream[] }>();
     for (const s of filtered) {
-      const d = new Date(s.match_timestamp * 1000);
-      const key = d.toDateString();
-      if (!m.has(key)) m.set(key, { label: dayLabel(s.match_timestamp), day: d.getDate(), items: [] });
-      m.get(key)!.items.push(s);
+      const ts = effectiveTs(s, now), diff = dayDiff(ts, now);
+      if (!m.has(diff)) m.set(diff, { diff, ts, items: [] });
+      m.get(diff)!.items.push(s);
     }
-    return [...m.values()];
+    const rank = (d: number) => (d >= 0 ? d : 10_000 - d);
+    return [...m.values()].sort((a, b) => rank(a.diff) - rank(b.diff)).map((g) => ({
+      ...g,
+      label: dayLabel(g.ts, now),
+      day: new Date(g.ts * 1000).getDate(),
+      month: new Date(g.ts * 1000).toLocaleDateString([], { month: "short" }),
+      items: g.items.sort((a, b) => Number(isLive(b)) - Number(isLive(a)) || effectiveTs(a, now) - effectiveTs(b, now)),
+    }));
   }, [filtered]);
 
   const tab = (id: string, label: string) => (
     <button key={id} onClick={() => setCategory(id)} aria-pressed={category === id}
-      className={`flex h-24 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors sm:h-28 sm:w-32 ${
-        category === id ? "border-live/70 bg-live/10 text-white" : "border-line bg-panel text-mute hover:bg-tile hover:text-white"}`}>
-      <SportIcon category={id} className={`h-6 w-6 ${category === id ? "text-live" : ""}`} />
-      {label}
-      <span className="text-[11px] font-medium text-mute">{counts[id] ?? 0}</span>
+      className={`flex h-16 items-center gap-3 rounded-xl border px-4 text-left text-sm font-semibold transition-colors ${
+        category === id ? "border-live/70 bg-live/10 text-white" : "border-line bg-panel/80 text-mute hover:bg-tile hover:text-white"}`}>
+      <SportIcon category={id} className={`h-5 w-5 shrink-0 ${category === id ? "text-live" : ""}`} />
+      <span className="flex-1 truncate">{label}</span>
+      <span className="rounded-md bg-black/30 px-2 py-0.5 text-xs text-mute">{counts[id] ?? 0}</span>
     </button>
   );
 
   return (
     <div className="mt-8 space-y-10">
-      {loading && <div className="skeleton h-64 rounded-2xl sm:h-72" />}
-      {featured && !query && <Hero s={featured} />}
+      {loading && <div className="skeleton h-[26rem] rounded-2xl sm:h-[24rem]" />}
+      {featured.length > 0 && !query && <HeroCarousel items={featured} />}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div className="space-y-4">
+        <div className="grid-fluid !gap-3" style={{ "--card": "170px" } as React.CSSProperties}>
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-24 w-28 shrink-0 rounded-xl sm:h-28 sm:w-32" />)
+            ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-16 rounded-xl" />)
             : <>{tab("all", "All")}{categories.map((c) => tab(c, cap(c)))}</>}
         </div>
-        <label className="relative block w-full lg:w-96">
+        <label className="relative block">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" aria-hidden />
           <input value={query} onChange={(e) => setQuery(e.target.value.slice(0, 60))} placeholder="Search match or league"
             aria-label="Search match or league" maxLength={60}
-            className="h-12 w-full rounded-xl border border-line bg-panel pl-11 pr-4 text-sm placeholder:text-mute focus:border-live/70 focus:outline-none" />
+            className="h-12 w-full rounded-xl border border-line bg-panel/80 pl-11 pr-4 text-sm placeholder:text-mute focus:border-live/70 focus:outline-none" />
         </label>
       </div>
 
@@ -135,10 +144,11 @@ export default function Browser() {
           ) : (
             <div className="space-y-10">
               {groups.map((g) => (
-                <div key={g.label + g.day} className="flex flex-col gap-4 md:flex-row md:gap-6">
+                <div key={g.diff} className="flex flex-col gap-4 md:flex-row md:gap-6">
                   <div className="flex shrink-0 items-baseline gap-3 md:w-24 md:flex-col md:gap-0 md:pt-1">
                     <p className="text-sm font-bold text-live">{g.label}</p>
                     <p className="text-4xl font-bold leading-tight">{g.day}</p>
+                    <p className="text-xs font-semibold text-mute">{g.month}</p>
                   </div>
                   <div className={view === "grid" ? "grid-fluid flex-1" : "flex flex-1 flex-col gap-2"}>
                     {g.items.map((s) => view === "grid" ? <MatchCard key={s.stream_key} s={s} /> : <MatchRow key={s.stream_key} s={s} />)}

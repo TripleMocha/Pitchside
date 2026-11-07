@@ -4,11 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, Clock, Link2, Maximize, Radio, RectangleHorizontal, RotateCw } from "lucide-react";
 import SportIcon from "./SportIcon";
-import { Thumb, cap, fmtTime } from "./MatchCard";
+import { Thumb, cap } from "./MatchCard";
+import { timeLabel } from "@/lib/time";
 import { safeEmbedUrl } from "@/lib/security";
 import { isLive, type Stream } from "@/lib/types";
 
 type State = { status: "loading" } | { status: "ready"; stream: Stream } | { status: "missing" } | { status: "error" };
+
+const FIT = "min(100%, max(20rem, calc((100dvh - 14rem) * 16 / 9)))"; // keeps the player inside the viewport height
 
 function countdown(ts: number, now: number) {
   const d = Math.max(0, Math.floor(ts - now / 1000));
@@ -77,12 +80,11 @@ export default function Player({ streamKey }: { streamKey: string }) {
 
   return (
     <div>
-      <Link href="/" className={`${btn} mb-6 w-fit`}>
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to matches
-      </Link>
-
-      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h1 className="text-2xl font-bold sm:text-4xl">{stream?.name ?? (state.status === "loading" ? "Loading…" : "Stream")}</h1>
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Link href="/" className={`${btn} shrink-0`} aria-label="Back to matches">
+          <ArrowLeft className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Back</span>
+        </Link>
+        <h1 className="min-w-0 truncate text-xl font-bold sm:text-3xl">{stream?.name ?? (state.status === "loading" ? "Loading…" : "Stream")}</h1>
         {stream && (live ? (
           <span className="flex items-center gap-1.5 rounded-md bg-live px-2.5 py-1 text-xs font-bold">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> LIVE
@@ -92,16 +94,17 @@ export default function Player({ streamKey }: { streamKey: string }) {
             <Clock className="h-3.5 w-3.5" aria-hidden /> {eta ? `Starts in ${eta}` : "Waiting for stream"}
           </span>
         ))}
+        {stream && (
+          <p className="flex items-center gap-2 text-sm text-mute lg:ml-auto">
+            <SportIcon category={stream.category} className="h-4 w-4" />
+            {cap(stream.category)} | {stream.league || "—"} | {timeLabel(stream)}
+          </p>
+        )}
       </div>
-      {stream && (
-        <p className="-mt-3 mb-5 flex items-center gap-2 text-sm text-mute">
-          <SportIcon category={stream.category} className="h-4 w-4" />
-          {cap(stream.category)} | {stream.league || "—"} | {fmtTime(stream.match_timestamp)}
-        </p>
-      )}
 
-      <div className={`grid gap-6 ${theater ? "" : "xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_440px]"}`}>
-        <div>
+      <div className={`grid gap-5 ${theater ? "" : "xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_440px]"}`}>
+        <div className="min-w-0">
+          <div className="mx-auto" style={{ width: FIT }}>
           <motion.div ref={box} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="glow relative aspect-video overflow-hidden rounded-2xl bg-black">
             {src ? (
@@ -141,6 +144,7 @@ export default function Player({ streamKey }: { streamKey: string }) {
                 {copied ? <Check className="h-4 w-4 text-green-400" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />} {copied ? "Copied" : "Copy link"}
               </button>
             </div>
+          </div>
           </div>
         </div>
 
@@ -184,7 +188,7 @@ export default function Player({ streamKey }: { streamKey: string }) {
                       <div className="w-32 shrink-0"><Thumb s={s} className="aspect-video rounded-lg" /></div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold">{s.name}</p>
-                        <p className="truncate text-xs text-mute">{s.league || "—"} | {fmtTime(s.match_timestamp)}</p>
+                        <p className="truncate text-xs text-mute">{s.league || "—"} | {timeLabel(s)}</p>
                       </div>
                     </Link>
                   </li>

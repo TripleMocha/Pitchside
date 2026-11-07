@@ -4,12 +4,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Play } from "lucide-react";
 import SportIcon from "./SportIcon";
+import { chipLabel, timeLabel } from "@/lib/time";
 import { isLive, type Stream } from "@/lib/types";
 
 export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-export const fmtTime = (ts: number) =>
-  new Date(ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-const fmtDay = (ts: number) => new Date(ts * 1000).toLocaleDateString([], { month: "short", day: "numeric" });
 
 export function Thumb({ s, className = "aspect-video rounded-xl" }: { s: Stream; className?: string }) {
   const [broken, setBroken] = useState(false);
@@ -29,9 +27,7 @@ export function Thumb({ s, className = "aspect-video rounded-xl" }: { s: Stream;
       <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-live"><Play className="h-5 w-5 fill-white" /></span>
       </div>
-      <span className="absolute left-2.5 top-2.5 rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-semibold">
-        {fmtDay(s.match_timestamp)}
-      </span>
+      <span className="absolute left-2.5 top-2.5 rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-semibold">{chipLabel(s)}</span>
       {isLive(s) && (
         <span className="absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-live px-2 py-0.5 text-[11px] font-bold">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> LIVE
@@ -47,7 +43,7 @@ export function MatchCard({ s }: { s: Stream }) {
       <Link href={`/watch/${s.stream_key}`} className="group block">
         <Thumb s={s} />
         <h3 className="mt-3 truncate text-lg font-bold">{s.name}</h3>
-        <p className="truncate text-sm text-mute">{cap(s.category)} | {s.league || "—"} | {fmtTime(s.match_timestamp)}</p>
+        <p className="truncate text-sm text-mute">{cap(s.category)} | {s.league || "—"} | {timeLabel(s)}</p>
       </Link>
     </motion.div>
   );
@@ -66,7 +62,7 @@ export function MatchRow({ s }: { s: Stream }) {
         {isLive(s) ? (
           <span className="rounded-md bg-live px-2 py-0.5 text-[11px] font-bold">LIVE</span>
         ) : (
-          <span className="text-sm text-mute">{fmtTime(s.match_timestamp)}</span>
+          <span className="text-sm text-mute">{timeLabel(s)}</span>
         )}
       </Link>
     </motion.div>
