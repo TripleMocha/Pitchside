@@ -9,3 +9,12 @@ body { @apply bg-bg font-sans text-white antialiased; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Fluid layout: no max-width cap, padding scales with the screen */
+.page-x { padding-inline: clamp(1rem, 3.5vw, 6rem); }
+.grid-fluid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card, 260px)), 1fr)); }
+.glow { box-shadow: 0 0 0 1px #1d2540, 0 24px 80px -24px rgba(229, 37, 45, .35); }
+.skeleton { position: relative; overflow: hidden; background: #0f1423; }
+.skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent); animation: shimmer 1.4s infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }

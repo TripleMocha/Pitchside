@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid, List, Search } from "lucide-react";
 import SportIcon from "./SportIcon";
+import Hero from "./Hero";
 import { MatchCard, MatchRow, cap } from "./MatchCard";
 import { isLive, type Stream } from "@/lib/types";
 
@@ -12,6 +13,14 @@ const dayLabel = (ts: number) => {
   if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
   return d.toLocaleDateString([], { weekday: "short" });
 };
+
+const CardSkeleton = () => (
+  <div>
+    <div className="skeleton aspect-video rounded-xl" />
+    <div className="skeleton mt-3 h-5 w-3/4 rounded" />
+    <div className="skeleton mt-2 h-4 w-1/2 rounded" />
+  </div>
+);
 
 export default function Browser() {
   const [streams, setStreams] = useState<Stream[] | null>(null);
@@ -35,7 +44,13 @@ export default function Browser() {
     return () => { alive = false; clearInterval(t); };
   }, []);
 
+  const loading = streams === null && !error;
   const categories = useMemo(() => Array.from(new Set((streams ?? []).map((s) => s.category))), [streams]);
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: streams?.length ?? 0 };
+    for (const s of streams ?? []) c[s.category] = (c[s.category] ?? 0) + 1;
+    return c;
+  }, [streams]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (streams ?? []).filter(
@@ -45,6 +60,7 @@ export default function Browser() {
   }, [streams, category, query]);
 
   const live = filtered.filter(isLive);
+  const featured = live.find((s) => s.thumbnail_url) ?? live[0];
   const groups = useMemo(() => {
     const m = new Map<string, { label: string; day: number; items: Stream[] }>();
     for (const s of filtered) {
@@ -58,48 +74,52 @@ export default function Browser() {
 
   const tab = (id: string, label: string) => (
     <button key={id} onClick={() => setCategory(id)} aria-pressed={category === id}
-      className={`flex h-28 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition-colors ${
+      className={`flex h-24 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors sm:h-28 sm:w-32 ${
         category === id ? "border-live/70 bg-live/10 text-white" : "border-line bg-panel text-mute hover:bg-tile hover:text-white"}`}>
       <SportIcon category={id} className={`h-6 w-6 ${category === id ? "text-live" : ""}`} />
       {label}
+      <span className="text-[11px] font-medium text-mute">{counts[id] ?? 0}</span>
     </button>
   );
 
   return (
     <div className="mt-8 space-y-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-          {tab("all", "All")}
-          {categories.map((c) => tab(c, cap(c)))}
+      {loading && <div className="skeleton h-64 rounded-2xl sm:h-72" />}
+      {featured && !query && <Hero s={featured} />}
+
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          {loading
+            ? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-24 w-28 shrink-0 rounded-xl sm:h-28 sm:w-32" />)
+            : <>{tab("all", "All")}{categories.map((c) => tab(c, cap(c)))}</>}
         </div>
-        <label className="relative block w-full sm:w-80">
+        <label className="relative block w-full lg:w-96">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" aria-hidden />
           <input value={query} onChange={(e) => setQuery(e.target.value.slice(0, 60))} placeholder="Search match or league"
             aria-label="Search match or league" maxLength={60}
-            className="h-11 w-full rounded-lg border border-line bg-panel pl-10 pr-4 text-sm placeholder:text-mute focus:border-live/70 focus:outline-none" />
+            className="h-12 w-full rounded-xl border border-line bg-panel pl-11 pr-4 text-sm placeholder:text-mute focus:border-live/70 focus:outline-none" />
         </label>
       </div>
 
-      {streams === null && !error && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-video animate-pulse rounded-lg bg-panel" />)}
-        </div>
-      )}
       {error && streams === null && <p className="text-sm text-mute">Matches couldn’t be loaded. Refresh to try again.</p>}
       {streams && filtered.length === 0 && <p className="text-sm text-mute">No matches found. Try another sport or search.</p>}
 
-      {live.length > 0 && (
+      {(loading || live.length > 0) && (
         <section>
-          <h2 className="mb-4 text-2xl font-bold">Live now</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6">
-            {live.map((s) => <MatchCard key={s.stream_key} s={s} />)}
+          <h2 className="mb-4 flex items-center gap-3 text-2xl font-bold">
+            Live now
+            {!loading && <span className="rounded-md bg-live/15 px-2 py-0.5 text-sm font-semibold text-live">{live.length}</span>}
+          </h2>
+          <div className="grid-fluid">
+            {loading ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+              : live.map((s) => <MatchCard key={s.stream_key} s={s} />)}
           </div>
         </section>
       )}
 
-      {groups.length > 0 && (
+      {(loading || groups.length > 0) && (
         <section>
-          <div className="mb-4 flex items-center justify-between border-b border-line pb-3">
+          <div className="mb-5 flex items-center justify-between border-b border-line pb-3">
             <h2 className="text-2xl font-bold">Matches</h2>
             <div className="flex gap-1.5">
               {([["grid", LayoutGrid], ["list", List]] as const).map(([v, Icon]) => (
@@ -110,21 +130,23 @@ export default function Browser() {
               ))}
             </div>
           </div>
-          <div className="space-y-8">
-            {groups.map((g) => (
-              <div key={g.label + g.day} className="flex flex-col gap-4 md:flex-row">
-                <div className="w-24 shrink-0 md:pt-1">
-                  <p className="text-sm font-bold text-live">{g.label}</p>
-                  <p className="text-4xl font-bold leading-tight">{g.day}</p>
+          {loading ? (
+            <div className="grid-fluid">{Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}</div>
+          ) : (
+            <div className="space-y-10">
+              {groups.map((g) => (
+                <div key={g.label + g.day} className="flex flex-col gap-4 md:flex-row md:gap-6">
+                  <div className="flex shrink-0 items-baseline gap-3 md:w-24 md:flex-col md:gap-0 md:pt-1">
+                    <p className="text-sm font-bold text-live">{g.label}</p>
+                    <p className="text-4xl font-bold leading-tight">{g.day}</p>
+                  </div>
+                  <div className={view === "grid" ? "grid-fluid flex-1" : "flex flex-1 flex-col gap-2"}>
+                    {g.items.map((s) => view === "grid" ? <MatchCard key={s.stream_key} s={s} /> : <MatchRow key={s.stream_key} s={s} />)}
+                  </div>
                 </div>
-                <div className={view === "grid"
-                  ? "grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6"
-                  : "flex flex-1 flex-col gap-2"}>
-                  {g.items.map((s) => view === "grid" ? <MatchCard key={s.stream_key} s={s} /> : <MatchRow key={s.stream_key} s={s} />)}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>
